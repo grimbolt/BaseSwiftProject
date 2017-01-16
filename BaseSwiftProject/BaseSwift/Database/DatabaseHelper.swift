@@ -11,6 +11,8 @@ import CoreData
 
 class DatabaseHelper: NSObject {
     
+    static let sharedInstance = DatabaseHelper()
+
     private static let lock = NSLock()
 
     private static let infoBlock :Any? = {
