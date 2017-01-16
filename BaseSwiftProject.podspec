@@ -12,7 +12,6 @@ Pod::Spec.new do |s|
 
   s.source_files = 'BaseSwiftProject/BaseSwift/**/*.swift'
   
-  s.requires_arc = 'true'
   s.dependency 'Alamofire', '~> 4.0'
   s.dependency 'AlamofireObjectMapper', '~> 4.0'
   s.dependency 'GzipSwift'
