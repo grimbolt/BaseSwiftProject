@@ -6,7 +6,7 @@ Pod::Spec.new do |s|
   s.summary = "Base classes for swift project."
   s.homepage = "https://github.com/grimbolt/BaseSwiftProject/"
   s.author = { "Grimbolt" => "topik105@gmail.com" }
-  s.source = { :git => 'https://github.com/grimbolt/BaseSwiftProject.git', :tag => s.version.to_s }
+  s.source = { :git => 'https://github.com/grimbolt/BaseSwiftProject.git' }
 
   s.ios.deployment_target = '8.0'
 
