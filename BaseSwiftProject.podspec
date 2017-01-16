@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '8.0'
 
-  s.source_files = 'Base/*.swift'
+  s.source_files = 'BaseSwiftProject/Base/**/*.swift'
   
   s.dependency 'Alamofire', '~> 4.0'
   s.dependency 'AlamofireObjectMapper', '~> 4.0'
