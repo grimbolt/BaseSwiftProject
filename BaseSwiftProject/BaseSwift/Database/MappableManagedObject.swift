@@ -10,14 +10,19 @@ import Foundation
 import ObjectMapper
 import CoreData
 
-class MappableManagedObject: NSManagedObject, StaticMappable {
+public struct PrimaryKey {
+    public var mapKey: String
+    public var objectKey: String
     
-    struct PrimaryKey {
-        var mapKey: String
-        var objectKey: String
+    public init(mapKey: String, objectKey: String) {
+        self.mapKey = mapKey
+        self.objectKey = objectKey
     }
+}
 
-    class func primaryKey() -> PrimaryKey? {
+open class MappableManagedObject: NSManagedObject, StaticMappable {
+    
+    open class func primaryKey() -> PrimaryKey? {
         return nil
     }
     
@@ -25,7 +30,7 @@ class MappableManagedObject: NSManagedObject, StaticMappable {
         super.init(entity: entity, insertInto: context)
     }
     
-    static func objectForMapping(map: Map) -> BaseMappable? {
+    open static func objectForMapping(map: Map) -> BaseMappable? {
         guard let primaryKey = primaryKey() else {
             return nil
         }
@@ -39,10 +44,10 @@ class MappableManagedObject: NSManagedObject, StaticMappable {
         }
         
         let entity = NSEntityDescription.entity(forEntityName: className, in: DatabaseHelper.sharedInstance.backgroundContext)
-        return SampleUser.init(entity: entity!, insertInto: DatabaseHelper.sharedInstance.backgroundContext)
+        return MappableManagedObject.init(entity: entity!, insertInto: DatabaseHelper.sharedInstance.backgroundContext)
     }
 
-    public func mapping(map: Map) {
+    open func mapping(map: Map) {
     }
 
 }

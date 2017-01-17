@@ -9,9 +9,9 @@
 import Foundation
 import CoreData
 
-class DatabaseHelper: NSObject {
+public class DatabaseHelper: NSObject {
     
-    static let sharedInstance = DatabaseHelper()
+    public static let sharedInstance = DatabaseHelper()
 
     private static let lock = NSLock()
 
@@ -30,7 +30,9 @@ class DatabaseHelper: NSObject {
     
     lazy var managedObjectModel: NSManagedObjectModel = {
         // The managed object model for the application. This property is not optional. It is a fatal error for the application not to be able to find and load its model.
-        let modelURL = Bundle.main.url(forResource: DATABASE_NAME, withExtension: "momd")!
+        
+        let databaseName = DatabaseHelper.value(forKey: "DATABASE_NAME") as! String
+        let modelURL = Bundle.main.url(forResource: databaseName, withExtension: "momd")!
         return NSManagedObjectModel(contentsOf: modelURL)!
     }()
     
@@ -38,7 +40,8 @@ class DatabaseHelper: NSObject {
         // The persistent store coordinator for the application. This implementation creates and returns a coordinator, having added the store for the application to it. This property is optional since there are legitimate error conditions that could cause the creation of the store to fail.
         // Create the coordinator and store
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel: self.managedObjectModel)
-        let url = DatabaseHelper.applicationDocumentsDirectory.appendingPathComponent(DATABASE_FILE_NAME)
+        let databaseFileName = DatabaseHelper.value(forKey: "DATABASE_FILE_NAME") as! String
+        let url = DatabaseHelper.applicationDocumentsDirectory.appendingPathComponent(databaseFileName)
         let failureReason = "There was an error creating or loading the application's saved data."
         do {
             let options = [NSMigratePersistentStoresAutomaticallyOption: true,
@@ -107,7 +110,7 @@ class DatabaseHelper: NSObject {
         return backgroundContext
     }()
     
-    func saveContext () {
+    public func saveContext () {
         self.saveContext( context: self.backgroundContext )
     }
     

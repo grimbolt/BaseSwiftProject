@@ -8,6 +8,7 @@
 
 import Foundation
 import Alamofire
+import BaseSwiftProject
 
 class RequestAccessToken: RequestAdapter, RequestRetrier {
     private typealias RefreshCompletion = (_ succeeded: Bool, _ accessToken: String?) -> Void

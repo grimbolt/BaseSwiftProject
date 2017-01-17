@@ -28,7 +28,7 @@ extension UIViewController: FakeFetchProtocol {
         }
     }
     
-    func addFetchedResultsController(_ clazz: AnyClass, sortDescription: [NSSortDescriptor]? = nil, predicate: NSPredicate? = nil, tableView: UITableView? = nil) -> NSFetchedResultsController<NSFetchRequestResult>? {
+    open func addFetchedResultsController(_ clazz: AnyClass, sortDescription: [NSSortDescriptor]? = nil, predicate: NSPredicate? = nil, tableView: UITableView? = nil) -> NSFetchedResultsController<NSFetchRequestResult>? {
         let entityName = NSStringFromClass(clazz)
         guard let fetchedResultsController = DatabaseHelper.sharedInstance.createFetchedResultController(entityName, sortDescriptor: sortDescription, predicate: predicate) else {
             return nil
@@ -62,11 +62,11 @@ extension UIViewController: FakeFetchProtocol {
         return fetchedResultsController
     }
     
-    func appDidBecomeActive(_ notification: Notification) { }
+    open func appDidBecomeActive(_ notification: Notification) { }
     
-    func appWillEnterForeground(_ notification: Notification) { }
+    open func appWillEnterForeground(_ notification: Notification) { }
     
-    func setPredicate(predicate: NSPredicate?, for controller: NSFetchedResultsController<NSFetchRequestResult>) {
+    open func setPredicate(predicate: NSPredicate?, for controller: NSFetchedResultsController<NSFetchRequestResult>) {
         controller.fetchRequest.predicate = predicate
         do {
             try controller.performFetch()
@@ -74,7 +74,7 @@ extension UIViewController: FakeFetchProtocol {
         } catch {}
     }
 
-    func setSort(descriptors: [NSSortDescriptor]?, for controller: NSFetchedResultsController<NSFetchRequestResult>) {
+    open func setSort(descriptors: [NSSortDescriptor]?, for controller: NSFetchedResultsController<NSFetchRequestResult>) {
         controller.fetchRequest.sortDescriptors = descriptors
         do {
             try controller.performFetch()
@@ -92,13 +92,13 @@ extension UIViewController: FakeFetchProtocol {
     
     // MARK: - NSFetchedResultControllerDelegate
     
-    public func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+    open func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         if let tableView = tableView(forController: controller) {
             tableView.beginUpdates()
         }
     }
     
-    @objc(controller:didChangeSection:atIndex:forChangeType:) public func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange sectionInfo: NSFetchedResultsSectionInfo, atSectionIndex sectionIndex: Int, for type: NSFetchedResultsChangeType) {
+    @objc(controller:didChangeSection:atIndex:forChangeType:) open func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange sectionInfo: NSFetchedResultsSectionInfo, atSectionIndex sectionIndex: Int, for type: NSFetchedResultsChangeType) {
         if let tableView = tableView(forController: controller) {
             switch type {
             case .insert:
@@ -110,7 +110,7 @@ extension UIViewController: FakeFetchProtocol {
         }
     }
     
-    @objc(controller:didChangeObject:atIndexPath:forChangeType:newIndexPath:) public func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+    @objc(controller:didChangeObject:atIndexPath:forChangeType:newIndexPath:) open func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         if let tableView = tableView(forController: controller) {
             switch type {
             case .insert:
@@ -137,7 +137,7 @@ extension UIViewController: FakeFetchProtocol {
         }
     }
     
-    public func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+    open func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         if let tableView = tableView(forController: controller) {
             tableView.endUpdates()
         }

@@ -9,6 +9,7 @@
 import Foundation
 import ObjectMapper
 import CoreData
+import BaseSwiftProject
 
 @objc(SampleUser)
 class SampleUser: MappableManagedObject {

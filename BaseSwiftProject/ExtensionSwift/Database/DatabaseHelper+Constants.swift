@@ -7,13 +7,13 @@
 //
 
 import Foundation
+import BaseSwiftProject
 
 private protocol FakeDatabaseConstantsProtocol {}
 
 extension DatabaseHelper: FakeDatabaseConstantsProtocol {
     
-    static let DATABASE_NAME = "BaseSwiftProject"
+    static let DATABASE_NAME = "TestPods"
     static let DATABASE_FILE_NAME = "\(DATABASE_NAME).sqlite"
-    static let sharedInstance = DatabaseHelper()
 
 }

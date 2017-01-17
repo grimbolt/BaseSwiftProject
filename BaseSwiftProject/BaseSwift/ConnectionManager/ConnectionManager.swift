@@ -11,7 +11,7 @@ import Alamofire
 import AlamofireObjectMapper
 import ObjectMapper
 
-class ConnectionManager {
+public class ConnectionManager {
     
     enum PareseError: Error {
         case invalid
@@ -19,20 +19,17 @@ class ConnectionManager {
     
     static let lock = NSLock()
     
-    static let sessionManager: SessionManager = {
+    public static let sessionManager: SessionManager = {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 2
         configuration.timeoutIntervalForResource = 2
         
         let session = SessionManager(configuration: configuration)
-        let requestAccessToken = RequestAccessToken()
-        session.adapter = requestAccessToken
-        session.retrier = requestAccessToken
         
         return session
     }()
     
-    static func request<T: BaseMappable> (
+    public static func request<T: BaseMappable> (
         _ url: URLConvertible,
         method: HTTPMethod = .get,
         parameters: Parameters? = nil,
