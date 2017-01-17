@@ -16,7 +16,7 @@ public class DatabaseHelper: NSObject {
     private static let lock = NSLock()
 
     private static let infoBlock :Any? = {
-        PRINT("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
+        print("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
         return nil
     }()
 
@@ -57,7 +57,7 @@ public class DatabaseHelper: NSObject {
             let wrappedError = NSError(domain: "YOUR_ERROR_DOMAIN", code: 9999, userInfo: dict)
             // Replace this with code to handle the error appropriately.
             // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-            LOG("Unresolved error \(wrappedError), \(wrappedError.userInfo)")
+            NSLog("Unresolved error \(wrappedError), \(wrappedError.userInfo)")
             abort()
         }
         
@@ -83,7 +83,7 @@ public class DatabaseHelper: NSObject {
                 // Replace this implementation with code to handle the error appropriately.
                 // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
                 let nserror = error as NSError
-                LOG("Unresolved error \(nserror), \(nserror.userInfo)")
+                NSLog("Unresolved error \(nserror), \(nserror.userInfo)")
                 abort()
             }
         }
@@ -121,17 +121,17 @@ public class DatabaseHelper: NSObject {
     func contextDidSaveContext(notification: NSNotification) {
         let sender = notification.object as! NSManagedObjectContext
         if sender === self.managedObjectContext {
-            LOG("******** Saved main Context in this thread")
+            NSLog("******** Saved main Context in this thread")
             self.backgroundContext.perform {
                 self.backgroundContext.mergeChanges(fromContextDidSave: notification as Notification)
             }
         } else if sender === self.backgroundContext {
-            LOG("******** Saved background Context in this thread")
+            NSLog("******** Saved background Context in this thread")
             self.managedObjectContext.perform {
                 self.managedObjectContext.mergeChanges(fromContextDidSave: notification as Notification)
             }
         } else {
-            LOG("******** Saved Context in other thread")
+            NSLog("******** Saved Context in other thread")
             self.backgroundContext.perform {
                 self.backgroundContext.mergeChanges(fromContextDidSave: notification as Notification)
             }
@@ -161,7 +161,7 @@ public class DatabaseHelper: NSObject {
             let results = try backgroundContext.fetch(fetchRequest)
             objects += results as! [NSManagedObject]
         } catch let error as NSError {
-            PRINT("Could not fetch \(error), \(error.userInfo)")
+            print("Could not fetch \(error), \(error.userInfo)")
         }
         
         if withLock { DatabaseHelper.lock.unlock() }
@@ -180,7 +180,7 @@ public class DatabaseHelper: NSObject {
             let results = try backgroundContext.count(for: fetchRequest)
             return results;
         } catch let error as NSError {
-            PRINT("Could not fetch \(error), \(error.userInfo)")
+            print("Could not fetch \(error), \(error.userInfo)")
         }
         
         DatabaseHelper.lock.unlock()
