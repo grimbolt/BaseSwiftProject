@@ -21,6 +21,10 @@ class SampleUser: MappableManagedObject {
     @NSManaged var id: String
     @NSManaged var picture: String?
     
+    override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
+        super.init(entity: entity, insertInto: context)
+    }
+
     override class func primaryKey() -> PrimaryKey? {
         return PrimaryKey(mapKey: "login.md5", objectKey: "id")
     }
