@@ -12,14 +12,14 @@ import CoreData
 public class DatabaseHelper: NSObject {
     
     public static let sharedInstance = DatabaseHelper()
-
+    
     private static let lock = NSLock()
-
+    
     private static let infoBlock :Any? = {
         print("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
         return nil
     }()
-
+    
     // MARK: - Core Data stack
     
     static let applicationDocumentsDirectory: NSURL = {
@@ -64,7 +64,7 @@ public class DatabaseHelper: NSObject {
         return coordinator
     }()
     
-    lazy var managedObjectContext: NSManagedObjectContext = {
+    public lazy var managedObjectContext: NSManagedObjectContext = {
         // Returns the managed object context for the application (which is already bound to the persistent store coordinator for the application.) This property is optional since there are legitimate error conditions that could cause the creation of the context to fail.
         let coordinator = self.persistentStoreCoordinator
         var managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
@@ -91,7 +91,7 @@ public class DatabaseHelper: NSObject {
     }
     
     // MARK: - Core Data background context
-
+    
     override init() {
         super.init()
         NotificationCenter.default.addObserver(self, selector: #selector(self.contextDidSaveContext), name: NSNotification.Name.NSManagedObjectContextDidSave, object: nil)
@@ -102,7 +102,7 @@ public class DatabaseHelper: NSObject {
         NotificationCenter.default.removeObserver(self)
     }
     
-    lazy var backgroundContext: NSManagedObjectContext = {
+    public lazy var backgroundContext: NSManagedObjectContext = {
         // Returns the managed object context for the application (which is already bound to the persistent store coordinator for the application.) This property is optional since there are legitimate error conditions that could cause the creation of the context to fail.
         let coordinator = self.persistentStoreCoordinator
         var backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
@@ -140,13 +140,13 @@ public class DatabaseHelper: NSObject {
             }
         }
     }
-
+    
     // MARK: - Core Data methods
-
+    
     func fetch(entityName: String, format: String = "") -> [NSManagedObject] {
         return fetch(entityName: entityName, format: format, withLock: true)
     }
-
+    
     private func fetch(entityName: String, format: String = "", withLock: Bool) -> [NSManagedObject] {
         if withLock { DatabaseHelper.lock.lock() }
         
@@ -156,7 +156,7 @@ public class DatabaseHelper: NSObject {
         if format != "" {
             fetchRequest.predicate = NSPredicate(format: format)
         }
-
+        
         do {
             let results = try backgroundContext.fetch(fetchRequest)
             objects += results as! [NSManagedObject]
@@ -186,7 +186,7 @@ public class DatabaseHelper: NSObject {
         DatabaseHelper.lock.unlock()
         return -1
     }
-
+    
     func delete(entityName: String, format: String = "") {
         DatabaseHelper.lock.lock()
         let objects: [NSManagedObject] = fetch(entityName: entityName, format: format, withLock: false)
@@ -195,7 +195,7 @@ public class DatabaseHelper: NSObject {
         }
         DatabaseHelper.lock.unlock()
     }
-
+    
     func createFetchedResultController(_ entityName: String, sortDescriptor: [NSSortDescriptor]?, predicate: NSPredicate?) -> NSFetchedResultsController<NSFetchRequestResult>? {
         DatabaseHelper.lock.lock()
         
