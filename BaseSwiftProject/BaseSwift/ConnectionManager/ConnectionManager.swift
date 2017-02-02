@@ -36,6 +36,7 @@ public class ConnectionManager {
         encoding: ParameterEncoding = URLEncoding.default,
         headers: HTTPHeaders? = nil,
         withPreloader: Bool = true,
+        withSaveContext: Bool = true,
         completionHandler: @escaping (DataResponse<T>) -> Void
         ) {
         
@@ -51,18 +52,26 @@ public class ConnectionManager {
             }
             completionHandler(response)
             
-            }.validate { request, response, data in
-                
-                if
-                    let data = data
-                {
-                    do {
-                        try JSONSerialization.jsonObject(with: data, options: [])
-                        return DataRequest.ValidationResult.success
-                    } catch {
-                    }
+            if withSaveContext {
+                switch response.result {
+                case .success:
+                    DatabaseHelper.sharedInstance.saveContext()
+                case .failure: break
                 }
-                return DataRequest.ValidationResult.failure(PareseError.invalid)
+            }
+            
+        }.validate { request, response, data in
+            
+            if
+                let data = data
+            {
+                do {
+                    try JSONSerialization.jsonObject(with: data, options: [])
+                    return DataRequest.ValidationResult.success
+                } catch {
+                }
+            }
+            return DataRequest.ValidationResult.failure(PareseError.invalid)
         }
     }
 }

@@ -14,12 +14,12 @@ public class DatabaseHelper: NSObject {
     public static let sharedInstance = DatabaseHelper()
     
     private static let lock = NSLock()
-    
+
     private static let infoBlock :Any? = {
         print("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
         return nil
     }()
-    
+
     // MARK: - Core Data stack
     
     static let applicationDocumentsDirectory: NSURL = {
@@ -58,7 +58,6 @@ public class DatabaseHelper: NSObject {
             // Replace this with code to handle the error appropriately.
             // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
             NSLog("Unresolved error \(wrappedError), \(wrappedError.userInfo)")
-            abort()
         }
         
         return coordinator
@@ -86,14 +85,13 @@ public class DatabaseHelper: NSObject {
                     // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
                     let nserror = error as NSError
                     NSLog("Unresolved error \(nserror), \(nserror.userInfo)")
-                    abort()
                 }
             }
         }
     }
     
     // MARK: - Core Data background context
-    
+
     override init() {
         super.init()
         NotificationCenter.default.addObserver(self, selector: #selector(self.contextDidSaveContext), name: NSNotification.Name.NSManagedObjectContextDidSave, object: nil)
@@ -142,13 +140,13 @@ public class DatabaseHelper: NSObject {
             }
         }
     }
-    
+
     // MARK: - Core Data methods
-    
+
     func fetch(entityName: String, format: String = "") -> [NSManagedObject] {
         return fetch(entityName: entityName, format: format, withLock: true)
     }
-    
+
     private func fetch(entityName: String, format: String = "", withLock: Bool) -> [NSManagedObject] {
         if withLock {
             DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
@@ -204,7 +202,7 @@ public class DatabaseHelper: NSObject {
             }
         }
     }
-    
+
     func createFetchedResultController(_ entityName: String, sortDescriptor: [NSSortDescriptor]?, predicate: NSPredicate?) -> NSFetchedResultsController<NSFetchRequestResult>? {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
         if let sortDescriptor = sortDescriptor {
