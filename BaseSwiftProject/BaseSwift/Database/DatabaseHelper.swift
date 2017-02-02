@@ -75,19 +75,21 @@ public class DatabaseHelper: NSObject {
     // MARK: - Core Data Saving support
     
     private func saveContext (context: NSManagedObjectContext) {
-        DatabaseHelper.lock.lock()
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nserror = error as NSError
-                NSLog("Unresolved error \(nserror), \(nserror.userInfo)")
-                abort()
+        DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
+        
+        context.performAndWait {
+            if context.hasChanges {
+                do {
+                    try context.save()
+                } catch {
+                    // Replace this implementation with code to handle the error appropriately.
+                    // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
+                    let nserror = error as NSError
+                    NSLog("Unresolved error \(nserror), \(nserror.userInfo)")
+                    abort()
+                }
             }
         }
-        DatabaseHelper.lock.unlock()
     }
     
     // MARK: - Core Data background context
@@ -148,7 +150,9 @@ public class DatabaseHelper: NSObject {
     }
     
     private func fetch(entityName: String, format: String = "", withLock: Bool) -> [NSManagedObject] {
-        if withLock { DatabaseHelper.lock.lock() }
+        if withLock {
+            DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
+        }
         
         var objects: [NSManagedObject] = [NSManagedObject]()
         
@@ -156,49 +160,52 @@ public class DatabaseHelper: NSObject {
         if format != "" {
             fetchRequest.predicate = NSPredicate(format: format)
         }
-        
-        do {
-            let results = try backgroundContext.fetch(fetchRequest)
-            objects += results as! [NSManagedObject]
-        } catch let error as NSError {
-            print("Could not fetch \(error), \(error.userInfo)")
+
+        backgroundContext.performAndWait { [weak self] in
+            do {
+                let results = try self?.backgroundContext.fetch(fetchRequest)
+                objects += results as! [NSManagedObject]
+            } catch let error as NSError {
+                print("Could not fetch \(error), \(error.userInfo)")
+            }
         }
         
-        if withLock { DatabaseHelper.lock.unlock() }
         return objects;
     }
     
-    func fetchCount(entityName: String, format: String = "") -> Int {
-        DatabaseHelper.lock.lock()
+    func fetchCount(entityName: String, format: String = "") -> Int? {
+        DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
         
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
         if format != "" {
             fetchRequest.predicate = NSPredicate(format: format)
         }
         
-        do {
-            let results = try backgroundContext.count(for: fetchRequest)
-            return results;
-        } catch let error as NSError {
-            print("Could not fetch \(error), \(error.userInfo)")
+        var count:Int?
+        
+        backgroundContext.performAndWait { [weak self] in
+            do {
+                count = try self?.backgroundContext.count(for: fetchRequest)
+            } catch let error as NSError {
+                print("Could not fetch \(error), \(error.userInfo)")
+            }
         }
         
-        DatabaseHelper.lock.unlock()
-        return -1
+        return count
     }
-    
+
     func delete(entityName: String, format: String = "") {
-        DatabaseHelper.lock.lock()
+        DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
+        
         let objects: [NSManagedObject] = fetch(entityName: entityName, format: format, withLock: false)
         for object in objects {
-            backgroundContext.delete(object)
+            backgroundContext.performAndWait { [weak self] in
+                self?.backgroundContext.delete(object)
+            }
         }
-        DatabaseHelper.lock.unlock()
     }
     
     func createFetchedResultController(_ entityName: String, sortDescriptor: [NSSortDescriptor]?, predicate: NSPredicate?) -> NSFetchedResultsController<NSFetchRequestResult>? {
-        DatabaseHelper.lock.lock()
-        
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
         if let sortDescriptor = sortDescriptor {
             fetchRequest.sortDescriptors = sortDescriptor
@@ -217,7 +224,6 @@ public class DatabaseHelper: NSObject {
             fetchedResultController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: strongSelf.managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
         })
         
-        DatabaseHelper.lock.unlock()
         return fetchedResultController
     }
 }

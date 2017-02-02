@@ -42,12 +42,24 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
                 return object
             }
         }
+
+        var object: MappableManagedObject? = nil
+
+        DatabaseHelper.sharedInstance.backgroundContext.performAndWait {
+            let entity = NSEntityDescription.entity(forEntityName: className, in: DatabaseHelper.sharedInstance.backgroundContext)
+            object = MappableManagedObject.init(entity: entity!, insertInto: DatabaseHelper.sharedInstance.backgroundContext)
+        }
         
-        let entity = NSEntityDescription.entity(forEntityName: className, in: DatabaseHelper.sharedInstance.backgroundContext)
-        return MappableManagedObject.init(entity: entity!, insertInto: DatabaseHelper.sharedInstance.backgroundContext)
+        return object
     }
 
     open func mapping(map: Map) {
+        DatabaseHelper.sharedInstance.backgroundContext.performAndWait { [weak self] in
+            self?.coreDataMapping(map: map)
+        }
+    }
+
+    open func coreDataMapping(map: Map) {
     }
 
 }
