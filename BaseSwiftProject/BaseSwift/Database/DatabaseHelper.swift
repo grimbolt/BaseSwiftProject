@@ -13,8 +13,6 @@ public class DatabaseHelper: NSObject {
     
     public static let sharedInstance = DatabaseHelper()
     
-    private static let lock = NSLock()
-
     private static let infoBlock :Any? = {
         print("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
         return nil
@@ -74,8 +72,6 @@ public class DatabaseHelper: NSObject {
     // MARK: - Core Data Saving support
     
     private func saveContext (context: NSManagedObjectContext) {
-        DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
-        
         context.performAndWait {
             if context.hasChanges {
                 do {
@@ -144,14 +140,6 @@ public class DatabaseHelper: NSObject {
     // MARK: - Core Data methods
 
     func fetch(entityName: String, format: String = "") -> [NSManagedObject] {
-        return fetch(entityName: entityName, format: format, withLock: true)
-    }
-
-    private func fetch(entityName: String, format: String = "", withLock: Bool) -> [NSManagedObject] {
-        if withLock {
-            DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
-        }
-        
         var objects: [NSManagedObject] = [NSManagedObject]()
         
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
@@ -172,8 +160,6 @@ public class DatabaseHelper: NSObject {
     }
     
     func fetchCount(entityName: String, format: String = "") -> Int? {
-        DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
-        
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
         if format != "" {
             fetchRequest.predicate = NSPredicate(format: format)
@@ -193,11 +179,9 @@ public class DatabaseHelper: NSObject {
     }
 
     func delete(entityName: String, format: String = "") {
-        DatabaseHelper.lock.lock() ; defer { DatabaseHelper.lock.unlock() }
-        
-        let objects: [NSManagedObject] = fetch(entityName: entityName, format: format, withLock: false)
+        let objects: [NSManagedObject] = fetch(entityName: entityName, format: format)
         for object in objects {
-            backgroundContext.performAndWait { [weak self] in
+            backgroundContext.perform { [weak self] in
                 self?.backgroundContext.delete(object)
             }
         }

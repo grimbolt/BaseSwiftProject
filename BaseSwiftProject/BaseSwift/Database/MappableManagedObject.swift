@@ -38,7 +38,13 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
         let className = NSStringFromClass(self)
         
         if let value = map[primaryKey.mapKey].currentValue {
-            if let object = DatabaseHelper.sharedInstance.fetch(entityName: className, format: "\(primaryKey.objectKey) = '\(value)'").first as? MappableManagedObject {
+            var object: MappableManagedObject? = nil
+            
+            DatabaseHelper.sharedInstance.backgroundContext.performAndWait {
+                object = DatabaseHelper.sharedInstance.fetch(entityName: className, format: "\(primaryKey.objectKey) = '\(value)'").first as? MappableManagedObject
+            }
+            
+            if let object = object {
                 return object
             }
         }
@@ -53,7 +59,7 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
         return object
     }
 
-    open func mapping(map: Map) {
+    public func mapping(map: Map) {
         DatabaseHelper.sharedInstance.backgroundContext.performAndWait { [weak self] in
             self?.coreDataMapping(map: map)
         }
