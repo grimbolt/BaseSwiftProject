@@ -13,11 +13,6 @@ public class DatabaseHelper: NSObject {
     
     public static let sharedInstance = DatabaseHelper()
     
-    private static let infoBlock :Any? = {
-        print("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
-        return nil
-    }()
-
     // MARK: - Core Data stack
     
     static let applicationDocumentsDirectory: NSURL = {
@@ -66,6 +61,9 @@ public class DatabaseHelper: NSObject {
         let coordinator = self.persistentStoreCoordinator
         var managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         managedObjectContext.persistentStoreCoordinator = coordinator
+        
+        print("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
+        
         return managedObjectContext
     }()
     

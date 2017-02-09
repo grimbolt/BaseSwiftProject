@@ -21,9 +21,15 @@ public struct PrimaryKey {
 }
 
 open class MappableManagedObject: NSManagedObject, StaticMappable {
+
+    private static let lock = NSLock()
     
     open class func primaryKey() -> PrimaryKey? {
         return nil
+    }
+
+    open class func primaryKeys() -> [PrimaryKey] {
+        return [PrimaryKey]()
     }
     
     override public init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
@@ -31,29 +37,42 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
     }
     
     open static func objectForMapping(map: Map) -> BaseMappable? {
-        guard let primaryKey = primaryKey() else {
+        MappableManagedObject.lock.lock() ; defer { MappableManagedObject.lock.unlock() }
+        
+        if primaryKey() == nil && primaryKeys().count == 0 {
             return nil
         }
         
-        let className = NSStringFromClass(self)
-        
-        if let value = map[primaryKey.mapKey].currentValue {
-            var object: MappableManagedObject? = nil
-            
-            DatabaseHelper.sharedInstance.backgroundContext.performAndWait {
-                object = DatabaseHelper.sharedInstance.fetch(entityName: className, format: "\(primaryKey.objectKey) = '\(value)'").first as? MappableManagedObject
-            }
-            
-            if let object = object {
-                return object
-            }
-        }
-
         var object: MappableManagedObject? = nil
 
         DatabaseHelper.sharedInstance.backgroundContext.performAndWait {
-            let entity = NSEntityDescription.entity(forEntityName: className, in: DatabaseHelper.sharedInstance.backgroundContext)
-            object = MappableManagedObject.init(entity: entity!, insertInto: DatabaseHelper.sharedInstance.backgroundContext)
+            let className = NSStringFromClass(self)
+
+            var format = ""
+
+            if let primaryKey = primaryKey(), let value = map[primaryKey.mapKey].currentValue {
+                format += "\(primaryKey.objectKey) = '\(value)' AND "
+            }
+
+            for primaryKey in primaryKeys() {
+                if let value = map[primaryKey.mapKey].currentValue {
+                    format += "\(primaryKey.objectKey) = '\(value)' AND "
+                }
+            }
+            
+            if format.characters.count - 5 > 0 {
+                let index = format.index(format.endIndex, offsetBy: -5)
+                format = format.substring(to: index)
+            }
+
+            if format != "" {
+                object = DatabaseHelper.sharedInstance.fetch(entityName: className, format: format).first as? MappableManagedObject
+            }
+            
+            if object == nil {
+                let entity = NSEntityDescription.entity(forEntityName: className, in: DatabaseHelper.sharedInstance.backgroundContext)
+                object = MappableManagedObject.init(entity: entity!, insertInto: DatabaseHelper.sharedInstance.backgroundContext)
+            }
         }
         
         return object
