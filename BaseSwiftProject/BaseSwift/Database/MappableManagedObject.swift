@@ -37,8 +37,6 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
     }
     
     open static func objectForMapping(map: Map) -> BaseMappable? {
-        MappableManagedObject.lock.lock() ; defer { MappableManagedObject.lock.unlock() }
-        
         if primaryKey() == nil && primaryKeys().count == 0 {
             return nil
         }
@@ -46,6 +44,8 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
         var object: MappableManagedObject? = nil
 
         DatabaseHelper.sharedInstance.backgroundContext.performAndWait {
+            MappableManagedObject.lock.lock() ; defer { MappableManagedObject.lock.unlock() }
+            
             let className = NSStringFromClass(self)
 
             var format = ""
@@ -66,7 +66,7 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
             }
 
             if format != "" {
-                object = DatabaseHelper.sharedInstance.fetch(entityName: className, format: format).first as? MappableManagedObject
+                object = DatabaseHelper.sharedInstance.fetch(entityName: className, format: format, sync: false).first as? MappableManagedObject
             }
             
             if object == nil {

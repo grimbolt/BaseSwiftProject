@@ -137,7 +137,7 @@ public class DatabaseHelper: NSObject {
 
     // MARK: - Core Data methods
 
-    func fetch(entityName: String, format: String = "") -> [NSManagedObject] {
+    func fetch(entityName: String, format: String = "", sync:Bool = true) -> [NSManagedObject] {
         var objects: [NSManagedObject] = [NSManagedObject]()
         
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
@@ -145,13 +145,21 @@ public class DatabaseHelper: NSObject {
             fetchRequest.predicate = NSPredicate(format: format)
         }
 
-        backgroundContext.performAndWait { [weak self] in
+        func _fetch(helper: DatabaseHelper?) {
             do {
-                let results = try self?.backgroundContext.fetch(fetchRequest)
+                let results = try helper?.backgroundContext.fetch(fetchRequest)
                 objects += results as! [NSManagedObject]
             } catch let error as NSError {
                 print("Could not fetch \(error), \(error.userInfo)")
             }
+        }
+        
+        if sync {
+            backgroundContext.performAndWait { [weak self] in
+                _fetch(helper: self)
+            }
+        } else {
+            _fetch(helper: self)
         }
         
         return objects;
