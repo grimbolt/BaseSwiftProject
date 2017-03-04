@@ -24,6 +24,8 @@ public class ConnectionManager {
         configuration.timeoutIntervalForRequest = 2
         configuration.timeoutIntervalForResource = 2
         
+        configuration.urlCache = nil
+        
         let session = SessionManager(configuration: configuration)
         
         return session
