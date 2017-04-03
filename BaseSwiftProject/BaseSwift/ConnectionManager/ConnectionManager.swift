@@ -76,4 +76,50 @@ public class ConnectionManager {
             return DataRequest.ValidationResult.failure(PareseError.invalid)
         }
     }
+    
+    public static func requestArray<T: BaseMappable> (
+        _ url: URLConvertible,
+        method: HTTPMethod = .get,
+        parameters: Parameters? = nil,
+        encoding: ParameterEncoding = URLEncoding.default,
+        headers: HTTPHeaders? = nil,
+        withPreloader: Bool = true,
+        withSaveContext: Bool = true,
+        completionHandler: @escaping (DataResponse<[T]>) -> Void
+        ) {
+        
+        let request = sessionManager.request(url, method: method, parameters: parameters, encoding: encoding, headers: headers)
+        if withPreloader {
+            showPreloader((request.request?.description ?? "") + (request.request?.allHTTPHeaderFields?.description ?? ""), type: .small)
+        }
+        
+        request.responseArray { (response: DataResponse<[T]>) in
+            
+            if withPreloader {
+                hidePreloader((request.request?.description ?? "") + (request.request?.allHTTPHeaderFields?.description ?? ""), type: .small)
+            }
+            completionHandler(response)
+            
+            if withSaveContext {
+                switch response.result {
+                case .success:
+                    DatabaseHelper.sharedInstance.saveContext()
+                case .failure: break
+                }
+            }
+            
+            }.validate { request, response, data in
+                
+                if
+                    let data = data
+                {
+                    do {
+                        try JSONSerialization.jsonObject(with: data, options: [])
+                        return DataRequest.ValidationResult.success
+                    } catch {
+                    }
+                }
+                return DataRequest.ValidationResult.failure(PareseError.invalid)
+        }
+    }
 }
