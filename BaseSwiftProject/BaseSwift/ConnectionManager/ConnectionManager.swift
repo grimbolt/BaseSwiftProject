@@ -21,8 +21,8 @@ public class ConnectionManager {
     
     public static let sessionManager: SessionManager = {
         let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 2
-        configuration.timeoutIntervalForResource = 2
+        configuration.timeoutIntervalForRequest = 20
+        configuration.timeoutIntervalForResource = 20
         
         configuration.urlCache = nil
         
