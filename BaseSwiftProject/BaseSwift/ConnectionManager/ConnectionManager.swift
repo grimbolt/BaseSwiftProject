@@ -18,19 +18,26 @@ public class ConnectionManager {
     }
     
     static let lock = NSLock()
-    
-    public static let sessionManager: SessionManager = {
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 20
-        configuration.timeoutIntervalForResource = 20
-        
-        configuration.urlCache = nil
-        
-        let session = SessionManager(configuration: configuration)
-        
-        return session
-    }()
-    
+
+    static var _sessionManager: SessionManager?
+    public static var sessionManager: SessionManager {
+        get {
+            if let sessionManager = ConnectionManager._sessionManager {
+                return sessionManager;
+            } else {
+                let configuration = URLSessionConfiguration.default
+                configuration.timeoutIntervalForRequest = 20
+                configuration.timeoutIntervalForResource = 20
+                
+                configuration.urlCache = nil
+                return SessionManager(configuration: configuration)
+            }
+        }
+        set {
+            ConnectionManager._sessionManager = newValue
+        }
+    }
+
     public static func request<T: BaseMappable> (
         _ url: URLConvertible,
         method: HTTPMethod = .get,
