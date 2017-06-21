@@ -51,13 +51,13 @@ public class ConnectionManager {
         
         let request = sessionManager.request(url, method: method, parameters: parameters, encoding: encoding, headers: headers)
         if withPreloader {
-            showPreloader((request.request?.description ?? "") + (request.request?.allHTTPHeaderFields?.description ?? ""), type: .small)
+            showPreloader((request.request?.description ?? ""), type: .small)
         }
 
         request.responseObject { (response: DataResponse<T>) in
             
             if withPreloader {
-                hidePreloader((request.request?.description ?? "") + (request.request?.allHTTPHeaderFields?.description ?? ""), type: .small)
+                hidePreloader((request.request?.description ?? ""), type: .small)
             }
             completionHandler(response)
             
