@@ -30,7 +30,9 @@ public class ConnectionManager {
                 configuration.timeoutIntervalForResource = 20
                 
                 configuration.urlCache = nil
-                return SessionManager(configuration: configuration)
+                
+                ConnectionManager._sessionManager = SessionManager(configuration: configuration)
+                return ConnectionManager._sessionManager!
             }
         }
         set {
