@@ -18,7 +18,7 @@ public class ConnectionManager {
     }
     
     static let lock = NSLock()
-
+    
     static var _sessionManager: SessionManager?
     public static var sessionManager: SessionManager {
         get {
@@ -39,7 +39,7 @@ public class ConnectionManager {
             ConnectionManager._sessionManager = newValue
         }
     }
-
+    
     public static func request<T: BaseMappable> (
         _ url: URLConvertible,
         method: HTTPMethod = .get,
@@ -55,7 +55,7 @@ public class ConnectionManager {
         if withPreloader {
             showPreloader((request.request?.description ?? ""), type: .small)
         }
-
+        
         request.responseObject { (response: DataResponse<T>) in
             
             if withPreloader {
@@ -71,18 +71,18 @@ public class ConnectionManager {
                 }
             }
             
-        }.validate { request, response, data in
-            
-            if
-                let data = data
-            {
-                do {
-                    try JSONSerialization.jsonObject(with: data, options: [])
-                    return DataRequest.ValidationResult.success
-                } catch {
+            }.validate { request, response, data in
+                
+                if
+                    let data = data
+                {
+                    do {
+                        try JSONSerialization.jsonObject(with: data, options: [])
+                        return DataRequest.ValidationResult.success
+                    } catch {
+                    }
                 }
-            }
-            return DataRequest.ValidationResult.failure(PareseError.invalid)
+                return DataRequest.ValidationResult.failure(PareseError.invalid)
         }
     }
     
@@ -129,6 +129,53 @@ public class ConnectionManager {
                     }
                 }
                 return DataRequest.ValidationResult.failure(PareseError.invalid)
+        }
+    }
+    
+    public static func simpleRequestWithHttpBody<T: BaseMappable> (url:URL,
+                                                 httpBody:Data?,
+                                                 method: HTTPMethod = .get,
+                                                 headers: HTTPHeaders? = nil,
+                                                 completionHandler: @escaping (DataResponse<[T]>) -> Void) {
+        
+        var urlRequest = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        urlRequest.httpBody = httpBody
+        urlRequest.httpMethod = method.rawValue
+        
+        if let _ = headers {
+            for header in headers! {
+                urlRequest.setValue(header.value, forHTTPHeaderField: header.key)
+            }
+        }
+        
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        let request = sessionManager.request(urlRequest)
+        
+        request.responseArray { (response: DataResponse<[T]>) in
+            completionHandler(response)
+            }.validate { (requst, response, data) -> Request.ValidationResult in
+                if
+                    let data = data
+                {
+                    do {
+                        try JSONSerialization.jsonObject(with: data, options: [])
+                        return DataRequest.ValidationResult.success
+                    } catch {
+                        
+                    }
+                }
+                
+                return DataRequest.ValidationResult.failure(PareseError.invalid)
+        }
+    }
+    
+    public static func cancelAllTasks() {
+        sessionManager.session.getTasksWithCompletionHandler { (sessionDataTask, sessionUploadTask, sessionDownloadTask) in
+            sessionDataTask.forEach({ $0.cancel() })
+            sessionUploadTask.forEach({ $0.cancel() })
+            sessionDownloadTask.forEach({ $0.cancel() })
         }
     }
 }

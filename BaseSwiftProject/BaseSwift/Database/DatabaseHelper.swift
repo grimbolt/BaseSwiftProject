@@ -1,5 +1,5 @@
 //
-//  AppDelegate+CoreData.swift
+//  DatabaseHelper.swift
 //  BaseSwiftProject
 //
 //  Created by Grimbolt on 07.01.2017.
@@ -85,7 +85,7 @@ public class DatabaseHelper: NSObject {
     }
     
     // MARK: - Core Data background context
-
+    
     override init() {
         super.init()
         NotificationCenter.default.addObserver(self, selector: #selector(self.contextDidSaveContext), name: NSNotification.Name.NSManagedObjectContextDidSave, object: nil)
@@ -134,17 +134,29 @@ public class DatabaseHelper: NSObject {
             }
         }
     }
-
+    
     // MARK: - Core Data methods
-
-    func fetch(entityName: String, format: String = "", sync:Bool = true) -> [NSManagedObject] {
+    
+    public func fetch(entityName: String, format: String = "", sync:Bool = true) -> [NSManagedObject] {
+        let predicate: NSPredicate
+        if format != "" {
+            predicate = NSPredicate(format: format)
+        } else {
+            predicate = NSPredicate(value: true)
+        }
+        
+        return self.fetch(entityName: entityName, predicate: predicate, sync: sync)
+    }
+    
+    public func fetch(entityName: String, predicate: NSPredicate, sortDescriptions: [NSSortDescriptor]? = nil, sync:Bool = true) -> [NSManagedObject] {
         var objects: [NSManagedObject] = [NSManagedObject]()
         
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
-        if format != "" {
-            fetchRequest.predicate = NSPredicate(format: format)
-        }
-
+        
+        fetchRequest.predicate = predicate
+        
+        fetchRequest.sortDescriptors = sortDescriptions
+        
         func _fetch(helper: DatabaseHelper?) {
             do {
                 let results = try helper?.backgroundContext.fetch(fetchRequest)
@@ -165,7 +177,7 @@ public class DatabaseHelper: NSObject {
         return objects;
     }
     
-    func fetchCount(entityName: String, format: String = "") -> Int? {
+    public func fetchCount(entityName: String, format: String = "") -> Int? {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
         if format != "" {
             fetchRequest.predicate = NSPredicate(format: format)
@@ -183,7 +195,7 @@ public class DatabaseHelper: NSObject {
         
         return count
     }
-
+    
     func delete(entityName: String, format: String = "") {
         let objects: [NSManagedObject] = fetch(entityName: entityName, format: format)
         for object in objects {
@@ -192,7 +204,7 @@ public class DatabaseHelper: NSObject {
             }
         }
     }
-
+    
     func createFetchedResultController(_ entityName: String, sortDescriptor: [NSSortDescriptor]?, predicate: NSPredicate?) -> NSFetchedResultsController<NSFetchRequestResult>? {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
         if let sortDescriptor = sortDescriptor {
@@ -213,5 +225,27 @@ public class DatabaseHelper: NSObject {
         })
         
         return fetchedResultController
+    }
+    
+    public func cleanDatabase() {
+        let stores = persistentStoreCoordinator.persistentStores
+        
+        for store in stores {
+            do {
+                try persistentStoreCoordinator.remove(store)
+                
+                if let path = store.url {
+                    try FileManager.default.removeItem(at: path)
+                }
+                
+                let databaseFileName = DatabaseHelper.value(forKey: "DATABASE_FILE_NAME") as! String
+                let url = DatabaseHelper.applicationDocumentsDirectory.appendingPathComponent(databaseFileName)
+                
+                let options = [NSMigratePersistentStoresAutomaticallyOption: true, NSInferMappingModelAutomaticallyOption: true]
+                try persistentStoreCoordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url, options: options)
+            } catch {
+                print("Error when cleaning database")
+            }
+        }
     }
 }

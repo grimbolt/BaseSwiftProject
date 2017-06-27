@@ -37,10 +37,6 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
     }
     
     open static func objectForMapping(map: Map) -> BaseMappable? {
-        if primaryKey() == nil && primaryKeys().count == 0 {
-            return nil
-        }
-        
         var object: MappableManagedObject? = nil
 
         DatabaseHelper.sharedInstance.backgroundContext.performAndWait {
