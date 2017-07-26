@@ -228,24 +228,40 @@ public class DatabaseHelper: NSObject {
     }
     
     public func cleanDatabase() {
-        let stores = persistentStoreCoordinator.persistentStores
+        let entities = managedObjectModel.entities;
         
-        for store in stores {
-            do {
-                try persistentStoreCoordinator.remove(store)
+        for entity in entities {
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>()
+            fetchRequest.entity = entity
+            
+            if #available(iOS 9.0, *) {
+                let request = NSBatchDeleteRequest(fetchRequest: fetchRequest)
                 
-                if let path = store.url {
-                    try FileManager.default.removeItem(at: path)
+                do {
+                    try managedObjectContext.execute(request)
+                } catch {
+                    print(error.localizedDescription)
                 }
+            } else {
+                fetchRequest.includesPropertyValues = false;
                 
-                let databaseFileName = DatabaseHelper.value(forKey: "DATABASE_FILE_NAME") as! String
-                let url = DatabaseHelper.applicationDocumentsDirectory.appendingPathComponent(databaseFileName)
-                
-                let options = [NSMigratePersistentStoresAutomaticallyOption: true, NSInferMappingModelAutomaticallyOption: true]
-                try persistentStoreCoordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url, options: options)
-            } catch {
-                print("Error when cleaning database")
+                do {
+                    if let objs = try managedObjectContext.fetch(fetchRequest) as? [NSManagedObject] {
+                        print("Eurocash - delete objects from: \(entity.name!) number of items: \(objs.count)")
+                        for obj in objs {
+                            managedObjectContext.delete(obj)
+                        }
+                    }
+                } catch {
+                    print(error.localizedDescription)
+                }
             }
+        }
+        
+        do {
+            try managedObjectContext.save()
+        } catch {
+            
         }
     }
 }
