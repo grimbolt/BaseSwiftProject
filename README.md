@@ -8,3 +8,4 @@ Base classes for swift project.
 - [AlamofireObjectMapper](https://github.com/tristanhimmelman/AlamofireObjectMapper/)
 - [GzipSwift](https://github.com/1024jp/GzipSwift/)
 - [SDWebImage](https://github.com/rs/SDWebImage/)
+- [SnapKit](https://github.com/SnapKit/SnapKit)
