@@ -16,4 +16,5 @@ Pod::Spec.new do |s|
   s.dependency 'AlamofireObjectMapper', '~> 4.0'
   s.dependency 'GzipSwift'
   s.dependency 'SDWebImage', '~> 3.8'
+  s.dependency 'SnapKit', '~> 3.2.0'
 end
