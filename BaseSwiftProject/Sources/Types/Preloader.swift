@@ -9,8 +9,9 @@
 import UIKit
 
 public enum PreloaderType {
-    case fullscreen
+    case none
     case small
+    case fullscreen
 }
 
 struct SimplePreloader {
@@ -48,13 +49,14 @@ class Preloader {
     fileprivate static var labels = [SimplePreloader]()
 }
 
-private func getPreloaderView(_ type: PreloaderType) -> UIView {
-    var preloaderView: UIView
+private func getPreloaderView(_ type: PreloaderType) -> UIView? {
+    var preloaderView: UIView?
     switch type {
     case .fullscreen:
         preloaderView = Preloader.fullscreenPreloader
     case .small:
         preloaderView = Preloader.smallPreloader
+    default: break
     }
     
     return preloaderView
@@ -63,27 +65,33 @@ private func getPreloaderView(_ type: PreloaderType) -> UIView {
 public func showPreloader(_ label: String?, type: PreloaderType) {
     Preloader.lock.lock()
     
+    if type == .none {
+        Preloader.lock.unlock()
+        return
+    }
+    
     guard let label = label else {
         Preloader.lock.unlock()
         return
     }
-
+    
     Preloader.labels.append(SimplePreloader(label: label, type: type))
-
+    
     if type == .small && Preloader.labels.contains(where: { $0.type == .fullscreen }) {
         Preloader.lock.unlock()
         return
     }
-
+    
     DispatchQueue.main.async() {
         let preloaderView = getPreloaderView(type)
-        if let indicator = preloaderView.subviews.first as? UIActivityIndicatorView {
+        if let preloaderView = preloaderView, let indicator = preloaderView.subviews.first as? UIActivityIndicatorView {
             switch type {
             case .fullscreen:
                 preloaderView.frame = UIScreen.main.bounds
                 indicator.center = preloaderView.center
             case .small:
                 preloaderView.center = CGPoint(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
+            default: break
             }
             indicator.startAnimating()
             
@@ -103,7 +111,12 @@ public func showPreloader(_ label: String?, type: PreloaderType) {
 
 public func hidePreloader(_ label: String?, type: PreloaderType) {
     Preloader.lock.lock()
-
+    
+    if type == .none {
+        Preloader.lock.unlock()
+        return
+    }
+    
     guard let label = label else {
         Preloader.lock.unlock()
         return
@@ -112,12 +125,15 @@ public func hidePreloader(_ label: String?, type: PreloaderType) {
     
     if Preloader.labels.count == 0 {
         DispatchQueue.main.async() {
-            let preloaderView = getPreloaderView(type)
-            UIView.animate(withDuration: Preloader.animationSpeed, animations: {
-                preloaderView.alpha = 0
-            }, completion: { complete in
-                preloaderView.removeFromSuperview()
-            })
+            if let preloaderView = getPreloaderView(type) {
+                UIView.animate(withDuration: Preloader.animationSpeed, animations: {
+                    preloaderView.alpha = 0
+                }, completion: { complete in
+                    if preloaderView.alpha == 0 {
+                        preloaderView.removeFromSuperview()
+                    }
+                })
+            }
         }
     }
     Preloader.lock.unlock()

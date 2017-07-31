@@ -46,22 +46,29 @@ public class ConnectionManager {
         parameters: Parameters? = nil,
         encoding: ParameterEncoding = URLEncoding.default,
         headers: HTTPHeaders? = nil,
-        withPreloader: Bool = true,
+        preloaderType: PreloaderType = .small,
         withSaveContext: Bool = true,
         completionHandler: @escaping (DataResponse<T>) -> Void
         ) {
         
         let request = sessionManager.request(url, method: method, parameters: parameters, encoding: encoding, headers: headers)
-        if withPreloader {
-            showPreloader((request.request?.description ?? ""), type: .small)
-        }
+        showPreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
         
         request.responseObject { (response: DataResponse<T>) in
             
-            if withPreloader {
-                hidePreloader((request.request?.description ?? ""), type: .small)
+            hidePreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
+            switch response.result {
+            case .failure(let error):
+                print("error \(error)")
+                if (error as NSError).code == NSURLErrorCancelled {
+                    // nothing
+                } else {
+                    completionHandler(response)
+                }
+                break
+            default:
+                completionHandler(response)
             }
-            completionHandler(response)
             
             if withSaveContext {
                 switch response.result {
@@ -92,22 +99,29 @@ public class ConnectionManager {
         parameters: Parameters? = nil,
         encoding: ParameterEncoding = URLEncoding.default,
         headers: HTTPHeaders? = nil,
-        withPreloader: Bool = true,
+        preloaderType: PreloaderType = .small,
         withSaveContext: Bool = true,
         completionHandler: @escaping (DataResponse<[T]>) -> Void
         ) {
         
         let request = sessionManager.request(url, method: method, parameters: parameters, encoding: encoding, headers: headers)
-        if withPreloader {
-            showPreloader((request.request?.description ?? "") + (request.request?.allHTTPHeaderFields?.description ?? ""), type: .small)
-        }
+        showPreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
         
         request.responseArray { (response: DataResponse<[T]>) in
             
-            if withPreloader {
-                hidePreloader((request.request?.description ?? "") + (request.request?.allHTTPHeaderFields?.description ?? ""), type: .small)
+            hidePreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
+            switch response.result {
+            case .failure(let error):
+                print("error \(error)")
+                if (error as NSError).code == NSURLErrorCancelled {
+                    // nothing
+                } else {
+                    completionHandler(response)
+                }
+                break
+            default:
+                completionHandler(response)
             }
-            completionHandler(response)
             
             if withSaveContext {
                 switch response.result {
@@ -154,7 +168,67 @@ public class ConnectionManager {
         let request = sessionManager.request(urlRequest)
         
         request.responseArray { (response: DataResponse<[T]>) in
-            completionHandler(response)
+            switch response.result {
+            case .failure(let error):
+                print("error \(error)")
+                if (error as NSError).code == NSURLErrorCancelled {
+                    // nothing
+                } else {
+                    completionHandler(response)
+                }
+                break
+            default:
+                completionHandler(response)
+            }
+            }.validate { (requst, response, data) -> Request.ValidationResult in
+                if let data = data
+                {
+                    do {
+                        try JSONSerialization.jsonObject(with: data, options: [])
+                        return DataRequest.ValidationResult.success
+                    } catch {
+                        
+                    }
+                }
+                
+                return DataRequest.ValidationResult.failure(PareseError.invalid)
+        }
+    }
+    
+    public static func simpleRequestWithHttpBody<T: BaseMappable> (url:URL,
+                                                 httpBody:Data?,
+                                                 method: HTTPMethod = .get,
+                                                 headers: HTTPHeaders? = nil,
+                                                 completionHandler: @escaping (DataResponse<T>) -> Void) {
+        
+        var urlRequest = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
+        urlRequest.httpBody = httpBody
+        urlRequest.httpMethod = method.rawValue
+        
+        if let _ = headers {
+            for header in headers! {
+                urlRequest.setValue(header.value, forHTTPHeaderField: header.key)
+            }
+        }
+        
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
+        
+        let request = sessionManager.request(urlRequest)
+        
+        request.responseObject { (response: DataResponse<T>) in
+            switch response.result {
+            case .failure(let error):
+                print("error \(error)")
+                if (error as NSError).code == NSURLErrorCancelled {
+                    // nothing
+                } else {
+                    completionHandler(response)
+                }
+                break
+            default:
+                completionHandler(response)
+            }
             }.validate { (requst, response, data) -> Request.ValidationResult in
                 if
                     let data = data
@@ -171,11 +245,29 @@ public class ConnectionManager {
         }
     }
     
-    public static func cancelAllTasks() {
+    public static func cancelAllTasks(whiteList: [String] = []) {
         sessionManager.session.getTasksWithCompletionHandler { (sessionDataTask, sessionUploadTask, sessionDownloadTask) in
-            sessionDataTask.forEach({ $0.cancel() })
-            sessionUploadTask.forEach({ $0.cancel() })
-            sessionDownloadTask.forEach({ $0.cancel() })
+            func forEach(_ task: URLSessionTask) {
+                if let url = task.currentRequest?.url?.absoluteString {
+                    var onWhiteList = false;
+                    whiteList.forEach({
+                        if url.hasPrefix($0) {
+                            onWhiteList = true
+                        }
+                    })
+                    
+                    if !onWhiteList {
+                        task.cancel()
+                    }
+                    
+                } else {
+                    task.cancel()
+                }
+            }
+            
+            sessionDataTask.forEach({ forEach($0) })
+            sessionUploadTask.forEach({ forEach($0) })
+            sessionDownloadTask.forEach({ forEach($0) })
         }
     }
 }
