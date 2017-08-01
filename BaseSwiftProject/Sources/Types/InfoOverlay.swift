@@ -40,7 +40,7 @@ public class InfoOverlay {
         #if DEBUG
             debug = "D"
         #else
-            ""
+            debug = ""
         #endif
         return InfoOverlay.additionalText+" "+version+debug
     }
