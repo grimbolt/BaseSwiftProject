@@ -61,6 +61,7 @@ public class DatabaseHelper: NSObject {
         let coordinator = self.persistentStoreCoordinator
         var managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         managedObjectContext.persistentStoreCoordinator = coordinator
+        managedObjectContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         
         print("▿ App location:\n\(DatabaseHelper.applicationDocumentsDirectory)\n\n")
         
@@ -101,6 +102,7 @@ public class DatabaseHelper: NSObject {
         let coordinator = self.persistentStoreCoordinator
         var backgroundContext = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         backgroundContext.persistentStoreCoordinator = coordinator
+        backgroundContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         return backgroundContext
     }()
     
