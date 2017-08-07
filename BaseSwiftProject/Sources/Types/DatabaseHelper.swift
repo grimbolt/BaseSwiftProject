@@ -125,6 +125,7 @@ public class DatabaseHelper: NSObject {
             NSLog("******** Saved background Context in this thread")
             self.managedObjectContext.perform {
                 self.managedObjectContext.mergeChanges(fromContextDidSave: notification as Notification)
+                self.mergeChangesBugFix(notification)
             }
         } else {
             NSLog("******** Saved Context in other thread")
@@ -133,10 +134,28 @@ public class DatabaseHelper: NSObject {
             }
             self.managedObjectContext.perform {
                 self.managedObjectContext.mergeChanges(fromContextDidSave: notification as Notification)
+                self.mergeChangesBugFix(notification)
             }
         }
     }
     
+    //BUG FIX: When the notification is merged it only updates objects which are already registered in the context.
+    //If the predicate for a NSFetchedResultsController matches an updated object but the object is not registered
+    //in the FRC's context then the FRC will fail to include the updated object. The fix is to force all updated
+    //objects to be refreshed in the context thus making them available to the FRC.
+    //Note that we have to be very careful about which methods we call on the managed objects in the notifications userInfo.
+    
+    private func mergeChangesBugFix(_ notification: NSNotification) {
+        if let updatedObjects = notification.userInfo?[NSUpdatedObjectsKey] as? Set<NSManagedObject> {
+            for unsafeManagedObject in updatedObjects {
+                do {
+                    let manangedObject = try self.managedObjectContext.existingObject(with: unsafeManagedObject.objectID)
+                    self.managedObjectContext.refresh(manangedObject, mergeChanges: true)
+                } catch { }
+            }
+        }
+    }
+
     // MARK: - Core Data methods
     
     public func fetch(entityName: String, format: String = "", sync:Bool = true) -> [NSManagedObject] {
