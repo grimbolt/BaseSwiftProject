@@ -217,7 +217,7 @@ public class DatabaseHelper: NSObject {
         return count
     }
     
-    func delete(entityName: String, format: String = "") {
+    public func delete(entityName: String, format: String = "") {
         let objects: [NSManagedObject] = fetch(entityName: entityName, format: format)
         for object in objects {
             backgroundContext.perform { [weak self] in
@@ -226,7 +226,7 @@ public class DatabaseHelper: NSObject {
         }
     }
     
-    func createFetchedResultController(_ entityName: String, sortDescriptor: [NSSortDescriptor]?, predicate: NSPredicate?) -> NSFetchedResultsController<NSFetchRequestResult>? {
+    public func createFetchedResultController(_ entityName: String, sortDescriptor: [NSSortDescriptor]?, predicate: NSPredicate?) -> NSFetchedResultsController<NSFetchRequestResult>? {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
         if let sortDescriptor = sortDescriptor {
             fetchRequest.sortDescriptors = sortDescriptor
@@ -248,10 +248,16 @@ public class DatabaseHelper: NSObject {
         return fetchedResultController
     }
     
-    public func cleanDatabase() {
+    public func cleanDatabase(ignore ignoreList: [AnyClass] = []) {
         let entities = managedObjectModel.entities;
         
+        let ignoreListStrings = ignoreList.flatMap { return NSStringFromClass($0) }
+        
         for entity in entities {
+            if entity.name == nil || ignoreListStrings.contains(entity.name!) {
+                continue
+            }
+            
             let fetchRequest = NSFetchRequest<NSFetchRequestResult>()
             fetchRequest.entity = entity
             
