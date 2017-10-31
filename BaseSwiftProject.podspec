@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name = "BaseSwiftProject"
-  s.version = "1.1.5"
+  s.version = "1.1.6"
   s.license = { :type => "MIT", :file => "LICENSE" }
   s.summary = "Base classes for swift project."
   s.homepage = "https://github.com/grimbolt/BaseSwiftProject/"
@@ -12,9 +12,9 @@ Pod::Spec.new do |s|
 
   s.source_files = 'BaseSwiftProject/Sources/**/*.swift'
   
-  s.dependency 'Alamofire', '~> 4.0'
-  s.dependency 'AlamofireObjectMapper', '~> 4.0'
+  s.dependency 'Alamofire', '~> 4.5'
+  s.dependency 'AlamofireObjectMapper', '~> 5.0'
   s.dependency 'GzipSwift'
-  s.dependency 'SDWebImage', '~> 3.8'
-  s.dependency 'SnapKit', '~> 3.2.0'
+  s.dependency 'SDWebImage', '~> 4.0'
+  s.dependency 'SnapKit', '~> 4.0.0'
 end
