@@ -63,18 +63,15 @@ private func getPreloaderView(_ type: PreloaderType) -> UIView? {
 }
 
 public func showPreloader(_ label: String?, type: PreloaderType) {
-    Preloader.lock.lock()
-    
     if type == .none {
-        Preloader.lock.unlock()
         return
     }
     
     guard let label = label else {
-        Preloader.lock.unlock()
         return
     }
-    
+    Preloader.lock.lock()
+
     Preloader.labels.append(SimplePreloader(label: label, type: type))
     
     if type == .small && Preloader.labels.contains(where: { $0.type == .fullscreen }) {
@@ -110,17 +107,15 @@ public func showPreloader(_ label: String?, type: PreloaderType) {
 }
 
 public func hidePreloader(_ label: String?, type: PreloaderType) {
-    Preloader.lock.lock()
-    
     if type == .none {
-        Preloader.lock.unlock()
         return
     }
     
     guard let label = label else {
-        Preloader.lock.unlock()
         return
     }
+    Preloader.lock.lock()
+    
     Preloader.labels = Preloader.labels.filter({ !($0.label == label && $0.type == type) })
     
     if Preloader.labels.count == 0 {

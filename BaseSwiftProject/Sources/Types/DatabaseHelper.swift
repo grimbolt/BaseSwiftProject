@@ -69,8 +69,24 @@ public class DatabaseHelper: NSObject {
     }()
     
     // MARK: - Core Data Saving support
-    
-    private func saveContext (context: NSManagedObjectContext) {
+
+    public func saveContext(for objects: [NSManagedObject]) {
+        var contexts = [NSManagedObjectContext]()
+        for object in objects {
+            if
+                let context = object.managedObjectContext,
+                contexts.contains(context)
+            {
+                contexts.append(context)
+            }
+        }
+        
+        for context in contexts {
+            saveContext(context)
+        }
+    }
+
+    public func saveContext(_ context: NSManagedObjectContext = DatabaseHelper.sharedInstance.backgroundContext) {
         context.performAndWait {
             if context.hasChanges {
                 do {
@@ -106,15 +122,11 @@ public class DatabaseHelper: NSObject {
         return backgroundContext
     }()
     
-    public func saveContext () {
-        self.saveContext( context: self.backgroundContext )
-    }
-    
-    func appWillTerminate(_ notification: Notification) {
+    @objc func appWillTerminate(_ notification: Notification) {
         saveContext()
     }
     
-    func contextDidSaveContext(notification: NSNotification) {
+    @objc func contextDidSaveContext(notification: NSNotification) {
         let sender = notification.object as! NSManagedObjectContext
         if sender === self.managedObjectContext {
             NSLog("******** Saved main Context in this thread")
@@ -178,6 +190,8 @@ public class DatabaseHelper: NSObject {
         
         fetchRequest.sortDescriptors = sortDescriptions
         
+        fetchRequest.includesSubentities = false
+        
         func _fetch(helper: DatabaseHelper?) {
             do {
                 let results = try helper?.backgroundContext.fetch(fetchRequest)
@@ -196,6 +210,37 @@ public class DatabaseHelper: NSObject {
         }
         
         return objects;
+    }
+    
+    public func fetch<T:NSManagedObject>(predicate: NSPredicate? = nil, sortDescriptions: [NSSortDescriptor]? = nil, sync: Bool = false, context: NSManagedObjectContext = DatabaseHelper.sharedInstance.backgroundContext) -> [T] {
+        var result = [T]()
+        
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: NSStringFromClass(T.self))
+        
+        fetchRequest.predicate = predicate
+        
+        fetchRequest.sortDescriptors = sortDescriptions
+        
+        fetchRequest.includesSubentities = false
+        
+        func runQuery(_ context: NSManagedObjectContext) {
+            do {
+                let fetchResults = try context.fetch(fetchRequest)
+                result += fetchResults as! [T]
+            } catch let error as NSError {
+                print("Could not fetch \(error), \(error.userInfo)")
+            }
+        }
+        
+        if sync {
+            context.performAndWait {
+                runQuery(context)
+            }
+        } else {
+            runQuery(context)
+        }
+        
+        return result
     }
     
     public func fetchCount(entityName: String, format: String = "") -> Int? {
@@ -237,6 +282,8 @@ public class DatabaseHelper: NSObject {
             fetchRequest.predicate = predicate
         }
         
+        fetchRequest.includesSubentities = false
+        
         var fetchedResultController: NSFetchedResultsController<NSFetchRequestResult>?
         managedObjectContext.performAndWait( { [weak self] in
             guard let strongSelf = self else {
@@ -251,7 +298,7 @@ public class DatabaseHelper: NSObject {
     public func cleanDatabase(ignore ignoreList: [AnyClass] = []) {
         let entities = managedObjectModel.entities;
         
-        let ignoreListStrings = ignoreList.flatMap { return NSStringFromClass($0) }
+        let ignoreListStrings = ignoreList.map({ NSStringFromClass($0) })
         
         for entity in entities {
             if entity.name == nil || ignoreListStrings.contains(entity.name!) {

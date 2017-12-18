@@ -44,25 +44,21 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
             
             let className = NSStringFromClass(self)
 
-            var format = ""
-
-            if let primaryKey = primaryKey(), let value = map[primaryKey.mapKey].currentValue {
-                format += "\(primaryKey.objectKey) = '\(value)' AND "
+            var predicates = [NSPredicate]()
+            
+            if let primaryKey = primaryKey(), let value = map[primaryKey.mapKey].currentValue as? CVarArg {
+                predicates.append(NSPredicate(format: "%@ = %@", primaryKey.objectKey, value))
             }
 
             for primaryKey in primaryKeys() {
-                if let value = map[primaryKey.mapKey].currentValue {
-                    format += "\(primaryKey.objectKey) = '\(value)' AND "
+                if let value = map[primaryKey.mapKey].currentValue as? CVarArg {
+                    predicates.append(NSPredicate(format: "%@ = %@", primaryKey.objectKey, value))
                 }
             }
-            
-            if format.characters.count - 5 > 0 {
-                let index = format.index(format.endIndex, offsetBy: -5)
-                format = format.substring(to: index)
-            }
 
-            if format != "" {
-                object = DatabaseHelper.sharedInstance.fetch(entityName: className, format: format, sync: false).first as? MappableManagedObject
+            if predicates.count > 0 {
+                let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+                object = DatabaseHelper.sharedInstance.fetch(entityName: className, predicate: predicate, sync: false).first as? MappableManagedObject
             }
             
             if object == nil {

@@ -48,15 +48,20 @@ public class ConnectionManager {
         headers: HTTPHeaders? = nil,
         preloaderType: PreloaderType = .small,
         withSaveContext: Bool = true,
+        beforeMapping: ((DefaultDataResponse) -> Void)? = nil,
         completionHandler: @escaping (DataResponse<T>) -> Void
         ) {
         
         let request = sessionManager.request(url, method: method, parameters: parameters, encoding: encoding, headers: headers)
-        showPreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
+        let uuid = UUID().uuidString
+        showPreloader(uuid, type: preloaderType)
         
-        request.responseObject { (response: DataResponse<T>) in
+        request.response { response in
+            beforeMapping?(response)
+            }
+            .responseObject { (response: DataResponse<T>) in
             
-            hidePreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
+            hidePreloader(uuid, type: preloaderType)
             switch response.result {
             case .failure(let error):
                 print("error \(error)")
@@ -78,18 +83,9 @@ public class ConnectionManager {
                 }
             }
             
-            }.validate { request, response, data in
-                
-                if
-                    let data = data
-                {
-                    do {
-                        try JSONSerialization.jsonObject(with: data, options: [])
-                        return DataRequest.ValidationResult.success
-                    } catch {
-                    }
-                }
-                return DataRequest.ValidationResult.failure(PareseError.invalid)
+            }
+            .validate { request, response, data in
+                return validate(request: request, response: response, data: data)
         }
     }
     
@@ -101,15 +97,20 @@ public class ConnectionManager {
         headers: HTTPHeaders? = nil,
         preloaderType: PreloaderType = .small,
         withSaveContext: Bool = true,
+        beforeMapping: ((DefaultDataResponse) -> Void)? = nil,
         completionHandler: @escaping (DataResponse<[T]>) -> Void
         ) {
         
         let request = sessionManager.request(url, method: method, parameters: parameters, encoding: encoding, headers: headers)
-        showPreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
-        
-        request.responseArray { (response: DataResponse<[T]>) in
+        let uuid = UUID().uuidString
+        showPreloader(uuid, type: preloaderType)
+
+        request.response { response in
+            beforeMapping?(response)
+            }
+            .responseArray { (response: DataResponse<[T]>) in
             
-            hidePreloader(String(ObjectIdentifier(request).hashValue), type: preloaderType)
+            hidePreloader(uuid, type: preloaderType)
             switch response.result {
             case .failure(let error):
                 print("error \(error)")
@@ -131,19 +132,25 @@ public class ConnectionManager {
                 }
             }
             
-            }.validate { request, response, data in
-                
-                if
-                    let data = data
-                {
-                    do {
-                        try JSONSerialization.jsonObject(with: data, options: [])
-                        return DataRequest.ValidationResult.success
-                    } catch {
-                    }
-                }
-                return DataRequest.ValidationResult.failure(PareseError.invalid)
+            }
+            .validate { request, response, data in
+                return validate(request: request, response: response, data: data)
         }
+    }
+    
+    private static func validate(request: URLRequest?, response: HTTPURLResponse, data: Data?) -> DataRequest.ValidationResult {
+        if
+            let data = data,
+            response.statusCode >= 200,
+            response.statusCode < 300
+        {
+            do {
+                try JSONSerialization.jsonObject(with: data, options: [])
+                return DataRequest.ValidationResult.success
+            } catch {
+            }
+        }
+        return DataRequest.ValidationResult.failure(PareseError.invalid)
     }
     
     public static func simpleRequestWithHttpBody<T: BaseMappable> (url:URL,
@@ -180,8 +187,12 @@ public class ConnectionManager {
             default:
                 completionHandler(response)
             }
-            }.validate { (requst, response, data) -> Request.ValidationResult in
-                if let data = data
+            }
+            .validate { (requst, response, data) -> Request.ValidationResult in
+                if
+                    let data = data,
+                    response.statusCode >= 200,
+                    response.statusCode < 300
                 {
                     do {
                         try JSONSerialization.jsonObject(with: data, options: [])
@@ -229,9 +240,12 @@ public class ConnectionManager {
             default:
                 completionHandler(response)
             }
-            }.validate { (requst, response, data) -> Request.ValidationResult in
+            }
+            .validate { (requst, response, data) -> Request.ValidationResult in
                 if
-                    let data = data
+                    let data = data,
+                    response.statusCode >= 200,
+                    response.statusCode < 300
                 {
                     do {
                         try JSONSerialization.jsonObject(with: data, options: [])

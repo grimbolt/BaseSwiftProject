@@ -62,9 +62,9 @@ extension UIViewController: FakeFetchProtocol {
         return fetchedResultsController
     }
     
-    open func appDidBecomeActive(_ notification: Notification) { }
+    @objc open func appDidBecomeActive(_ notification: Notification) { }
     
-    open func appWillEnterForeground(_ notification: Notification) { }
+    @objc open func appWillEnterForeground(_ notification: Notification) { }
     
     open func setPredicate(predicate: NSPredicate?, for controller: NSFetchedResultsController<NSFetchRequestResult>) {
         controller.fetchRequest.predicate = predicate
@@ -92,7 +92,7 @@ extension UIViewController: FakeFetchProtocol {
     
     // MARK: - NSFetchedResultControllerDelegate
     
-    open func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+    @objc(controllerWillChangeContent:) open func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         if let tableView = tableView(forController: controller) {
             tableView.beginUpdates()
         }
@@ -137,7 +137,7 @@ extension UIViewController: FakeFetchProtocol {
         }
     }
     
-    open func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+    @objc(controllerDidChangeContent:) open func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         if let tableView = tableView(forController: controller) {
             tableView.endUpdates()
         }

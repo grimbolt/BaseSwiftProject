@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name = "BaseSwiftProject"
-  s.version = "1.1.6"
+  s.version = "1.2.0"
   s.license = { :type => "MIT", :file => "LICENSE" }
   s.summary = "Base classes for swift project."
   s.homepage = "https://github.com/grimbolt/BaseSwiftProject/"
