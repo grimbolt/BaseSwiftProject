@@ -47,12 +47,12 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
             var predicates = [NSPredicate]()
             
             if let primaryKey = primaryKey(), let value = map[primaryKey.mapKey].currentValue as? CVarArg {
-                predicates.append(NSPredicate(format: "%@ = %@", primaryKey.objectKey, value))
+                predicates.append(NSPredicate(format: primaryKey.objectKey + " = %@", value))
             }
-
+            
             for primaryKey in primaryKeys() {
                 if let value = map[primaryKey.mapKey].currentValue as? CVarArg {
-                    predicates.append(NSPredicate(format: "%@ = %@", primaryKey.objectKey, value))
+                    predicates.append(NSPredicate(format: primaryKey.objectKey + " = %@", value))
                 }
             }
 
