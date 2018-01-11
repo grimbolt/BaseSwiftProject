@@ -46,13 +46,23 @@ open class MappableManagedObject: NSManagedObject, StaticMappable {
 
             var predicates = [NSPredicate]()
             
-            if let primaryKey = primaryKey(), let value = map[primaryKey.mapKey].currentValue as? CVarArg {
-                predicates.append(NSPredicate(format: primaryKey.objectKey + " = %@", value))
+            if let primaryKey = primaryKey() {
+                if let value = map[primaryKey.mapKey].currentValue as? String {
+                    predicates.append(NSPredicate(format: primaryKey.objectKey + " = %@", value))
+                } else if let value = map[primaryKey.mapKey].currentValue {
+                    predicates.append(NSPredicate(format: primaryKey.objectKey + " = \(value)"))
+                } else {
+                    predicates.append(NSPredicate(format: primaryKey.objectKey + " = nil OR " + primaryKey.objectKey + " = 0 OR " + primaryKey.objectKey + " = \"\""))
+                }
             }
             
             for primaryKey in primaryKeys() {
-                if let value = map[primaryKey.mapKey].currentValue as? CVarArg {
+                if let value = map[primaryKey.mapKey].currentValue as? String {
                     predicates.append(NSPredicate(format: primaryKey.objectKey + " = %@", value))
+                } else if let value = map[primaryKey.mapKey].currentValue {
+                    predicates.append(NSPredicate(format: primaryKey.objectKey + " = \(value)"))
+                } else {
+                    predicates.append(NSPredicate(format: primaryKey.objectKey + " = nil OR " + primaryKey.objectKey + " = 0 OR " + primaryKey.objectKey + " = \"\""))
                 }
             }
 
